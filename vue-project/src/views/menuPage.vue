@@ -5,6 +5,7 @@
 
   const notes = ref();
   const showModal = ref(false);
+  const showError = ref(false);
   const newNoteTitle = ref();
   const newNoteContents = ref();
   fetchNotes();
@@ -12,7 +13,7 @@
 
   function fetchNotes(){
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'http://127.0.0.1:8000/api/fetch-notes', true);
+    xhr.open('GET', 'http://localhost:8000/api/fetch-notes', true);
     xhr.onload = function () {
       if (xhr.status >= 200 && xhr.status < 300) {
         notes.value = JSON.parse(xhr.responseText);
@@ -30,12 +31,13 @@
   }
   function createNote(){
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://127.0.0.1:8000/api/create-note', true);
+    xhr.open('POST', 'http://localhost:8000/api/create-note', true);
     xhr.onload = function () {
-      if (xhr.status >= 200 && xhr.status < 300) {
+      if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText != false) {
         var slug = JSON.parse(xhr.responseText);
         if(slug == false){
           console.error("failed to create note");
+          showError.value = true;
           return false
         }
         notes.value.unshift({
@@ -47,14 +49,17 @@
         newNoteContents.value = "";
         newNoteTitle.value = "";
         showModal.value = false;
+        showError.value = false;
         return true;
       } else {
         console.error('Request failed with status', xhr.status);
+        showError.value = true;
         return false;
       }
     };
     xhr.onerror = function () {
       console.error('Request failed');
+      showError.value = true;
       return false;
     };
     xhr.send(JSON.stringify({
@@ -62,6 +67,7 @@
       "title":newNoteTitle.value,
       "created_at":new Date()
     }));
+    showError.value = false;
     return true;
   }
 </script>
@@ -102,6 +108,7 @@
           class="w-full resize-none rounded-md border border-[#e0e0e0] bg-white py-3 px-6 text-base font-medium text-[#6B7280] outline-none focus:border-[#6A64F1] focus:shadow-md"
         ></textarea>
       </div>
+      <p v-if="showError" style="color:red">Failed to create note</p>
       <button
         @click="createNote()"
         class="hover:shadow-form rounded-md bg-[#6A64F1] py-3 text-base font-semibold text-white outline-none modal-button"

@@ -4,7 +4,7 @@
 
     const fetchNote = () => {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'http://127.0.0.1:8000/api/fetch-note/'+slug, true);
+        xhr.open('GET', 'http://localhost:8000/api/fetch-note/'+slug, true);
         xhr.onload = function () {
         if (xhr.status >= 200 && xhr.status < 300) {
             cardData.value = JSON.parse(xhr.responseText);
@@ -23,19 +23,21 @@
     }
     const saveNote = () => {
         var xhr = new XMLHttpRequest();
-        xhr.open('PUT', 'http://127.0.0.1:8000/api/update-note', true);
+        xhr.open('PUT', 'http://localhost:8000/api/update-note', true);
         xhr.onload = function () {
-        if (xhr.status >= 200 && xhr.status < 300) {
-            console.log(xhr.responseText);
-            showSaveButton.value = false;
-            return true;
-        } else {
-            console.error('Request failed with status', xhr.status);
-            return false;
-        }
+            if (xhr.status >= 200 && xhr.status < 300 && JSON.parse(xhr.responseText) != false) {
+                showSaveButton.value = false;
+                showSaveError.value = false;
+                return true;
+            } else {
+                console.error('Request failed with status', xhr.status);
+                showSaveError.value = true;
+                return false;
+            }
         };
         xhr.onerror = function () {
         console.error('Request failed');
+        showSaveError.value = true;
         return false;
         };
         xhr.send(JSON.stringify({
@@ -46,20 +48,23 @@
     }
     const deleteNote = () => {
         var xhr = new XMLHttpRequest();
-        xhr.open('DELETE', 'http://127.0.0.1:8000/api/delete-note', true);
+        xhr.open('DELETE', 'http://localhost:8000/api/delete-note', true);
         xhr.onload = function () {
-        if (xhr.status >= 200 && xhr.status < 300) {
+        if (xhr.status >= 200 && xhr.status < 300 && JSON.parse(xhr.responseText) != false) {
             console.log(xhr.responseText);
             showDeleteModal.value = false;
+            showDeleteError.value = false;
             document.getElementById("backButton").click();
             return true;
         } else {
             console.error('Request failed with status', xhr.status);
+            showDeleteError.value = true;
             return false;
         }
         };
         xhr.onerror = function () {
         console.error('Request failed');
+        showDeleteError.value = true;
         return false;
         };
         xhr.send(JSON.stringify({"slug":slug}));
@@ -70,6 +75,8 @@
     const cardData = ref();
     const showSaveButton = ref(false);
     const showDeleteModal = ref(false);
+    const showSaveError = ref(false);
+    const showDeleteError = ref(false);
 
     fetchNote();
 </script>
@@ -80,6 +87,7 @@
             <div class="modalCard">
                 <div class="mb-5">
                     <h1>Delete Note?</h1>
+                    <p v-if="showDeleteError" style="color:red">Failed to delete note</p>
                     <div class="flex items-center justify-between text-gray-400 dark:text-gray-400">
                         <button
                             @click="deleteNote"
@@ -103,7 +111,7 @@
 
     <div style="background-color:rgb(226, 225, 225);height:100vw">
         <RouterLink id="backButton" style="margin:20px; width:400px;" :to="'/'" >
-            <button>Back</button>
+            <button style="color:dodgerblue;margin:30px" >Back</button>
         </RouterLink>
         <div class="flex items-center justify-between text-gray-400 dark:text-gray-400">
             <input  
@@ -133,6 +141,7 @@
                 </div>
             </div>
         </div>
+        <p v-if="showSaveError" style="color:red">Failed to save note</p>
         <button
         @click="saveNote()"
         v-if="showSaveButton"
